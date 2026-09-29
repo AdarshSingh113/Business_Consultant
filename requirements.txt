@@ -1,0 +1,17 @@
+# Database: SQLite locally, Postgres (Supabase) in production
+sqlalchemy>=2.0,<3
+psycopg[binary]>=3.1,<4
+
+# Config and secrets
+pyyaml>=6.0
+python-dotenv>=1.0
+
+# LLMs (free tiers): Gemini primary, Groq fallback
+google-genai>=1.0
+groq>=0.9
+
+# Collectors
+praw>=7.7
+
+# Tests
+pytest>=8.0

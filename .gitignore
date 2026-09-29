@@ -1,0 +1,17 @@
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+venv/
+
+# Secrets never go in git
+.env
+
+# Local SQLite database
+data/*.db
+data/*.db-journal
+
+# Real review exports stay out of this public repo; import them from your machine
+data/imports/*
+!data/imports/.gitkeep
+!data/imports/README.md

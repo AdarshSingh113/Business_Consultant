@@ -1,0 +1,68 @@
+# What the consultant watches. Edit this file to change brands, not the code.
+#
+# Placeholder setup: one client brand and two competitors in one category.
+
+category: true wireless earbuds
+
+# Words that must appear near a brand name for a Reddit/web post to count.
+# "boat" is an ordinary English word, so "boAt" alone would match fishing posts.
+context_keywords:
+  - earbuds
+  - earphones
+  - tws
+  - headphones
+  - neckband
+  - buds
+  - anc
+  - audio
+
+brands:
+  - id: boat                 # short slug, used as the database key
+    name: boAt
+    is_client: true          # exactly one brand is "our" client
+    aliases: [boat, boat lifestyle, airdopes]
+    products: [Airdopes 141, Airdopes 311 Pro, Nirvana Ion]
+
+  - id: noise
+    name: Noise
+    is_client: false
+    aliases: [noise, gonoise, buds vs104, noise buds]
+    products: [Buds VS104, Buds X Prime]
+
+  - id: jbl
+    name: JBL
+    is_client: false
+    aliases: [jbl, jbl wave, jbl tune]
+    products: [Wave Beam, Tune Beam]
+
+sources:
+  csv:
+    folder: data/imports     # every *.csv here is imported on each run (duplicates are skipped)
+  reddit:
+    enabled: true
+    subreddits: [headphones, IndianGaming, IndiaTech, india]
+    time_filter: month       # hour | day | week | month | year | all
+    posts_per_query: 25
+    comments_per_post: 5
+
+# Fixed issue labels the tagger (Phase 2) must choose from.
+# A fixed list stops the LLM from inventing "battery", "battery life" and "power" as separate issues.
+issues:
+  - sound_quality
+  - bass
+  - battery_life
+  - charging
+  - connectivity
+  - mic_quality
+  - comfort_fit
+  - build_quality
+  - durability
+  - anc
+  - latency
+  - app_software
+  - price_value
+  - delivery
+  - packaging
+  - customer_service
+  - warranty_returns
+  - other
