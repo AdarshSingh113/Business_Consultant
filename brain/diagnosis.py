@@ -315,4 +315,7 @@ def format_diagnosis(engine: Engine, config: Config, d: Diagnosis) -> str:
             lines.append(f"   To confirm: {h['would_confirm']}")
     if d.result["next_checks"]:
         lines.append("\nNext checks: " + "; ".join(d.result["next_checks"]))
-    return "\n".join(lines)
+    from brain.recommender import format_recommendations  # avoid a circular import
+
+    lines.append(format_recommendations(d.result.get("recommendations", [])))
+    return "\n".join(line for line in lines if line)

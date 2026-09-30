@@ -4,10 +4,11 @@ An AI consultant for a brand. It watches what people say about the brand and its
 spots problems on its own, asks for data when it needs it, and gives evidence-backed fixes.
 Built only on free tools, as a learning project.
 
-**Status: Phase 4 of 6.** Data comes in from CSV files and Reddit, the LLM tags each review with
+**Status: Phase 5 of 6.** Data comes in from CSV files and Reddit, the LLM tags each review with
 issues and sentiment, the Perception Radar compares the client with its competitors, a daily
 detector emails you when complaints spike, and a consultant agent investigates each spike,
-asks you for data when reviews aren't enough, and reports likely root causes with evidence.
+asks you for data when reviews aren't enough, reports likely root causes with evidence, and
+recommends prioritized actions. A competitor teardown shows what to copy, defend and launch.
 
 | Phase | Build | Status |
 |---|---|---|
@@ -15,8 +16,8 @@ asks you for data when reviews aren't enough, and reports likely root causes wit
 | 2 | Tagger (review → issue, sentiment) with an accuracy test set, Perception Radar | Done |
 | 3 | Anomaly detector, daily alerts by email | Done |
 | 4 | Consultant agent: diagnosis, asks you for data | Done |
-| 5 | Competitor teardown, recommendations | Next |
-| 6 | Dashboard, weekly report | |
+| 5 | Competitor teardown, recommendations | Done |
+| 6 | Dashboard, weekly report | Next |
 
 ## How Phase 1 works
 
@@ -134,6 +135,32 @@ python -m brain.consultant show           # latest diagnoses
 Known limits: the agent's confidence numbers are its own judgement, not a probability, and it can
 be overconfident on a handful of near-identical reviews. Read the quotes.
 
+## How Phase 5 works
+
+**Competitor Teardown** (`brain/teardown.py`). Math picks the candidates from the radar, the LLM
+writes the insight and action for each, citing real quotes:
+
+| Section | Rule (enough reviews on both sides) |
+|---|---|
+| Copy | a competitor beats the client by 0.2+ net sentiment on an issue, **and is net positive** |
+| Fight | the client beats the competitors by 0.2+, **and is net positive** |
+| Gaps | every brand with data is net negative on an issue: an unmet need |
+
+"Less bad" never counts as good: boAt at −0.3 on battery vs competitors at −0.5 is not a strength.
+
+**Recommendations** (`brain/recommender.py`). For each finished diagnosis the LLM proposes
+2-5 actions and rates impact and effort. The code sets the priority:
+
+    score = impact (1-3) x confidence in the cause / effort (1-3)      P1 >= 1.5, P2 >= 0.6, else P3
+
+Actions aimed at an uncertain cause (under 60%) are marked **Confirm first**. For a competitor's
+problem, the actions are about winning their unhappy customers.
+
+```bash
+python -m brain.teardown --days 90     # print and save a teardown
+python -m brain.teardown --no-llm      # the math part only
+```
+
 ## Run it locally (no accounts needed)
 
 ```bash
@@ -141,7 +168,7 @@ python -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\act
 pip install -r requirements.txt
 cp .env.example .env
 
-python -m pytest                                     # 39 tests
+python -m pytest                                     # 46 tests
 
 # Import the made-up sample reviews into a local SQLite file (data/local.db)
 python -m collectors.csv_import data/sample/sample_reviews.csv

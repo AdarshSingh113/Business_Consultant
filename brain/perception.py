@@ -90,7 +90,8 @@ class Radar:
 
     @property
     def strengths(self) -> list[Gap]:
-        return [g for g in self.gaps if g.gap >= GAP_THRESHOLD and not g.low_data]
+        # Being less bad than competitors is not a strength: the client must also be net positive.
+        return [g for g in self.gaps if g.gap >= GAP_THRESHOLD and g.client_net > 0 and not g.low_data]
 
     @property
     def weaknesses(self) -> list[Gap]:

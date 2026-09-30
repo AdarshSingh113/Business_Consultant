@@ -1,4 +1,4 @@
-"""Daily job: collect -> tag -> detect -> alert -> diagnose.
+"""Daily job: collect -> tag -> detect -> alert -> diagnose -> recommend.
 
 Each collector runs on its own: if Reddit fails, CSV data still gets stored.
 The run is logged to the `runs` table, and the process exits non-zero on any
@@ -12,7 +12,7 @@ import traceback
 
 from dotenv import load_dotenv
 
-from brain import consultant, detector, tagger
+from brain import consultant, detector, diagnosis, recommender, tagger
 from collectors import csv_import, reddit
 from core import db
 from core.config import load_config
@@ -80,7 +80,7 @@ def run() -> int:
         errors.append(f"detector/alerts: {type(exc).__name__}: {exc}")
         traceback.print_exc()
 
-    # 5. Investigate anomalies and email the findings (Phase 4)
+    # 5. Investigate anomalies, recommend actions, email the findings (Phases 4-5)
     if llm is None:
         stats["consultant"] = "skipped: no LLM configured"
     else:
@@ -88,12 +88,21 @@ def run() -> int:
             outcome = consultant.investigate(engine, llm, config)
             diagnoses = outcome.pop("_diagnoses")
             stats["consultant"] = outcome
+            retry = [diagnosis.load_diagnosis(engine, i) for i in recommender.missing(engine)]
+            touched = {d.id for d in diagnoses}
+            made = failed = 0
+            for d in diagnoses + [d for d in retry if d.id not in touched]:
+                recs = recommender.recommend(engine, llm, config, d)
+                made += len(recs or [])
+                failed += recs is None
+            stats["recommendations"] = made
+            if failed:
+                errors.append(f"recommender: LLM unavailable for {failed} diagnoses, retried next run")
             stats["diagnosis_email"] = alerts.send_diagnoses(engine, config, diagnoses)
         except Exception as exc:
             errors.append(f"consultant: {type(exc).__name__}: {exc}")
             traceback.print_exc()
 
-    # Phase 5+: recommendations.
 
     status = "ok" if not errors else ("partial" if stats else "failed")
     db.finish_run(engine, run_id, status, stats, errors)

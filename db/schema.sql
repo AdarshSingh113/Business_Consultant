@@ -108,6 +108,15 @@ CREATE TABLE IF NOT EXISTS data_requests (
     answered_at   TEXT
 );
 
+-- Phase 5-6: saved outputs (competitor teardowns, weekly reports) for the dashboard.
+CREATE TABLE IF NOT EXISTS reports (
+    id          TEXT PRIMARY KEY,
+    kind        TEXT NOT NULL,                   -- teardown, weekly
+    since       TEXT NOT NULL,                   -- data window start
+    content     TEXT NOT NULL,                   -- JSON for teardowns, markdown for weekly reports
+    created_at  TEXT NOT NULL
+);
+
 -- LLM responses keyed by prompt hash, so the same review is never paid for twice.
 CREATE TABLE IF NOT EXISTS llm_cache (
     key         TEXT PRIMARY KEY,
