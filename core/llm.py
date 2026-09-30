@@ -21,6 +21,9 @@ from sqlalchemy.engine import Engine
 from core.text import now_iso
 
 
+DEFAULT_GEMINI_MODELS = "gemini-3.8-flash,gemini-flash-lite-latest"
+
+
 class LLMError(RuntimeError):
     pass
 
@@ -70,6 +73,7 @@ class _Gemini(_Provider):
                 system_instruction=system,
                 response_mime_type="application/json",
                 temperature=0,
+                automatic_function_calling=types.AutomaticFunctionCallingConfig(disable=True),
             ),
         )
         return response.text or ""
@@ -121,13 +125,13 @@ class LLM:
             return
 
         if key := os.environ.get("GEMINI_API_KEY"):
-            self.providers.append(
-                _Gemini(
-                    key,
-                    os.environ.get("GEMINI_MODEL") or "gemini-2.5-flash",
-                    float(os.environ.get("GEMINI_MIN_INTERVAL") or 6),
+            # Comma-separated list, tried in order. Google retires model names and
+            # overloads popular ones, so a second model keeps the job running.
+            models = os.environ.get("GEMINI_MODEL") or DEFAULT_GEMINI_MODELS
+            for model in filter(None, (m.strip() for m in models.split(","))):
+                self.providers.append(
+                    _Gemini(key, model, float(os.environ.get("GEMINI_MIN_INTERVAL") or 6))
                 )
-            )
         if key := os.environ.get("GROQ_API_KEY"):
             self.providers.append(
                 _Groq(
