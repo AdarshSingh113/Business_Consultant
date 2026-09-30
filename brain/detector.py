@@ -36,7 +36,9 @@ BASELINE_DAYS = 28
 MIN_RECENT = 10  # reviews of the brand in the recent window
 MIN_BASELINE = 20  # reviews of the brand in the baseline window
 MIN_HITS = 3  # complaints in the recent window
-MIN_Z = 2.0  # about 98% one-sided confidence
+# About 57 checks run per day (18 issues x 3 brands, plus ratings). At z >= 2, roughly 1 in 40
+# fires by pure chance, so false alarms would arrive most days. z >= 3 is about 1 in 750.
+MIN_Z = 3.0
 MIN_LIFT = 0.05  # at least +5 percentage points
 COOLDOWN_DAYS = 7
 

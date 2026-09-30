@@ -40,10 +40,9 @@ def add(engine, brand, n, day, issue=None, sentiment="negative", rating=None, ta
 
 
 def spike(engine, brand):
-    """Battery complaints: 2 of 40 in the baseline, 6 of 15 recently. Low ratings rise too."""
+    """Battery complaints: 2 of 40 in the baseline, 6 of 15 recently (z = 3.28). Low ratings too."""
     add(engine, brand, 2, BASELINE_DAY, "battery_life", rating=2)
-    add(engine, brand, 2, BASELINE_DAY, "sound_quality", "positive", rating=2)
-    add(engine, brand, 36, BASELINE_DAY, "sound_quality", "positive", rating=5)
+    add(engine, brand, 38, BASELINE_DAY, "sound_quality", "positive", rating=5)
     add(engine, brand, 6, RECENT_DAY, "battery_life", rating=1)
     add(engine, brand, 9, RECENT_DAY, "sound_quality", "positive", rating=5)
 
@@ -57,6 +56,7 @@ def test_small_or_tiny_changes_are_not_spikes():
     assert is_spike(4, 9, 2, 40) is None  # too few recent reviews
     assert is_spike(2, 20, 0, 40) is None  # too few complaints
     assert is_spike(30, 300, 250, 3000) is None  # 10% vs 8.3%: real but too small to matter
+    assert is_spike(5, 15, 2, 40) is None  # z = 2.8: suggestive, but below the bar
     assert is_spike(6, 15, 2, 40) == pytest.approx(3.28, abs=0.01)
 
 

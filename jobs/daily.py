@@ -1,4 +1,4 @@
-"""Daily job: collect -> tag -> detect -> alert. Phase 4 adds diagnose.
+"""Daily job: collect -> tag -> detect -> alert -> diagnose.
 
 Each collector runs on its own: if Reddit fails, CSV data still gets stored.
 The run is logged to the `runs` table, and the process exits non-zero on any
@@ -12,7 +12,7 @@ import traceback
 
 from dotenv import load_dotenv
 
-from brain import detector, tagger
+from brain import consultant, detector, tagger
 from collectors import csv_import, reddit
 from core import db
 from core.config import load_config
@@ -59,6 +59,7 @@ def run() -> int:
     try:
         llm = LLM(engine)
     except LLMError as exc:
+        llm = None
         stats["tagger"] = f"skipped: {exc}"
     else:
         try:
@@ -79,7 +80,20 @@ def run() -> int:
         errors.append(f"detector/alerts: {type(exc).__name__}: {exc}")
         traceback.print_exc()
 
-    # Phase 4+: diagnose new anomalies.
+    # 5. Investigate anomalies and email the findings (Phase 4)
+    if llm is None:
+        stats["consultant"] = "skipped: no LLM configured"
+    else:
+        try:
+            outcome = consultant.investigate(engine, llm, config)
+            diagnoses = outcome.pop("_diagnoses")
+            stats["consultant"] = outcome
+            stats["diagnosis_email"] = alerts.send_diagnoses(engine, config, diagnoses)
+        except Exception as exc:
+            errors.append(f"consultant: {type(exc).__name__}: {exc}")
+            traceback.print_exc()
+
+    # Phase 5+: recommendations.
 
     status = "ok" if not errors else ("partial" if stats else "failed")
     db.finish_run(engine, run_id, status, stats, errors)

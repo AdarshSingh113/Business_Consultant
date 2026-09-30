@@ -4,17 +4,18 @@ An AI consultant for a brand. It watches what people say about the brand and its
 spots problems on its own, asks for data when it needs it, and gives evidence-backed fixes.
 Built only on free tools, as a learning project.
 
-**Status: Phase 3 of 6.** Data comes in from CSV files and Reddit, the LLM tags each review with
-issues and sentiment, the Perception Radar compares the client with its competitors, and a daily
-detector emails you when complaints spike.
+**Status: Phase 4 of 6.** Data comes in from CSV files and Reddit, the LLM tags each review with
+issues and sentiment, the Perception Radar compares the client with its competitors, a daily
+detector emails you when complaints spike, and a consultant agent investigates each spike,
+asks you for data when reviews aren't enough, and reports likely root causes with evidence.
 
 | Phase | Build | Status |
 |---|---|---|
 | 1 | Config, database, LLM wrapper, CSV and Reddit collectors, daily job | Done |
 | 2 | Tagger (review → issue, sentiment) with an accuracy test set, Perception Radar | Done |
 | 3 | Anomaly detector, daily alerts by email | Done |
-| 4 | Consultant agent: diagnosis, asks you for data | Next |
-| 5 | Competitor teardown, recommendations | |
+| 4 | Consultant agent: diagnosis, asks you for data | Done |
+| 5 | Competitor teardown, recommendations | Next |
 | 6 | Dashboard, weekly report | |
 
 ## How Phase 1 works
@@ -88,7 +89,8 @@ Every day, for each brand, the detector compares the **last 7 days** with the **
 A change only counts when **all** of these hold, so "2 complaints became 4" doesn't page you:
 - at least 10 recent and 20 baseline reviews for the brand
 - at least 3 recent complaints
-- a two-proportion z-test of 2 or more (unlikely to be chance)
+- a two-proportion z-test of 3 or more. About 57 checks run a day, so at the textbook 2, about
+  one would fire by pure chance most days
 - a rise of at least 5 percentage points (big enough to matter)
 
 A spike at the client is a **problem**. A spike at a competitor is an **opportunity**. The same
@@ -102,6 +104,36 @@ python -m brain.detector                    # what would fire today
 python -m brain.detector --as-of 2026-08-31 # replay a past date
 ```
 
+## How Phase 4 works: the agent
+
+```
+anomaly ──► diagnosis agent (brain/diagnosis.py), up to 10 LLM turns
+              │  each turn the LLM replies with ONE JSON action:
+              ├─ call_tool ──► brain/tools.py (plain SQL) ──► result added to transcript
+              │     query_reviews · breakdown (by product/source) · issue_breakdown · compare_competitors
+              ├─ request_user_data ──► saved + emailed to you, status = waiting, stop
+              │                        (next daily run resumes once you answer)
+              └─ final ──► evidence checked ──► diagnosis saved + emailed
+```
+
+- The LLM chooses what to look at. **The code decides what counts**: reviews are shown to the
+  agent as refs (`m1`, `m2`), hypotheses must cite them, refs it was never shown are removed,
+  and a hypothesis with no valid evidence has its confidence capped at 30%.
+- Every turn is stored in the `diagnoses.transcript` column, so you can read how it reasoned.
+- If the LLM is down, progress is saved and the next run continues.
+- Up to 3 new investigations per day, client problems first, to fit free LLM quotas.
+
+```bash
+python -m demo.run_demo                   # whole pipeline on made-up data with a real LLM
+python -m brain.consultant requests       # questions the agent is waiting on
+python -m brain.consultant answer req-1a2b3c4d "Yes, new cell supplier from 20 Aug"
+python -m brain.consultant answer req-1a2b3c4d --file returns.csv
+python -m brain.consultant show           # latest diagnoses
+```
+
+Known limits: the agent's confidence numbers are its own judgement, not a probability, and it can
+be overconfident on a handful of near-identical reviews. Read the quotes.
+
 ## Run it locally (no accounts needed)
 
 ```bash
@@ -109,7 +141,7 @@ python -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\act
 pip install -r requirements.txt
 cp .env.example .env
 
-python -m pytest                                     # 35 tests
+python -m pytest                                     # 39 tests
 
 # Import the made-up sample reviews into a local SQLite file (data/local.db)
 python -m collectors.csv_import data/sample/sample_reviews.csv

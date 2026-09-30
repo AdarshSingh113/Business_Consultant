@@ -83,6 +83,31 @@ CREATE TABLE IF NOT EXISTS anomalies (
 
 CREATE INDEX IF NOT EXISTS idx_anomalies_status ON anomalies (status, created_at);
 
+-- Phase 4: the consultant agent's investigation of one anomaly.
+CREATE TABLE IF NOT EXISTS diagnoses (
+    id           TEXT PRIMARY KEY,
+    anomaly_id   TEXT NOT NULL REFERENCES anomalies(id),
+    status       TEXT NOT NULL,                  -- running, waiting (for your data), done, gave_up
+    steps        INTEGER NOT NULL DEFAULT 0,     -- LLM calls so far
+    transcript   TEXT NOT NULL,                  -- JSON: every action and tool result, for review
+    refs         TEXT NOT NULL,                  -- JSON: short refs (m1, m2) -> mention ids shown to the agent
+    result       TEXT,                           -- JSON: summary and hypotheses with evidence
+    created_at   TEXT NOT NULL,
+    updated_at   TEXT NOT NULL
+);
+
+-- Phase 4: questions the agent asks you when reviews alone can't answer.
+CREATE TABLE IF NOT EXISTS data_requests (
+    id            TEXT PRIMARY KEY,
+    diagnosis_id  TEXT NOT NULL REFERENCES diagnoses(id),
+    question      TEXT NOT NULL,
+    why           TEXT,                           -- how the answer would change the diagnosis
+    status        TEXT NOT NULL,                  -- open, answered
+    answer        TEXT,
+    created_at    TEXT NOT NULL,
+    answered_at   TEXT
+);
+
 -- LLM responses keyed by prompt hash, so the same review is never paid for twice.
 CREATE TABLE IF NOT EXISTS llm_cache (
     key         TEXT PRIMARY KEY,
