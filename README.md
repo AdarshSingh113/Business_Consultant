@@ -4,15 +4,16 @@ An AI consultant for a brand. It watches what people say about the brand and its
 spots problems on its own, asks for data when it needs it, and gives evidence-backed fixes.
 Built only on free tools, as a learning project.
 
-**Status: Phase 2 of 6.** Data comes in from CSV files and Reddit, the LLM tags each review with
-issues and sentiment, and the Perception Radar compares the client with its competitors.
+**Status: Phase 3 of 6.** Data comes in from CSV files and Reddit, the LLM tags each review with
+issues and sentiment, the Perception Radar compares the client with its competitors, and a daily
+detector emails you when complaints spike.
 
 | Phase | Build | Status |
 |---|---|---|
 | 1 | Config, database, LLM wrapper, CSV and Reddit collectors, daily job | Done |
 | 2 | Tagger (review → issue, sentiment) with an accuracy test set, Perception Radar | Done |
-| 3 | Anomaly detector, daily alerts by email | Next |
-| 4 | Consultant agent: diagnosis, asks you for data | |
+| 3 | Anomaly detector, daily alerts by email | Done |
+| 4 | Consultant agent: diagnosis, asks you for data | Next |
 | 5 | Competitor teardown, recommendations | |
 | 6 | Dashboard, weekly report | |
 
@@ -75,6 +76,32 @@ python -m evals.eval_tagger            # score the tagger against hand-labeled r
 **Before trusting the tagger**, add about 100 real reviews you labeled yourself to
 `evals/labeled_reviews.csv` (see `evals/README.md`). Aim for an issue F1 of 0.8 or higher.
 
+## How Phase 3 works
+
+Every day, for each brand, the detector compares the **last 7 days** with the **28 days before**:
+
+| Signal | Example |
+|---|---|
+| `complaint_spike` | boAt reviews complaining about battery: 5% → 40% |
+| `low_rating_spike` | boAt 1-2 star reviews: 10% → 40% |
+
+A change only counts when **all** of these hold, so "2 complaints became 4" doesn't page you:
+- at least 10 recent and 20 baseline reviews for the brand
+- at least 3 recent complaints
+- a two-proportion z-test of 2 or more (unlikely to be chance)
+- a rise of at least 5 percentage points (big enough to matter)
+
+A spike at the client is a **problem**. A spike at a competitor is an **opportunity**. The same
+signal is not raised again within 7 days. Thresholds are constants at the top of `brain/detector.py`.
+
+Alerts go by Gmail with real review quotes as evidence. Without Gmail, they are printed in the job
+log and on the GitHub Actions run summary page.
+
+```bash
+python -m brain.detector                    # what would fire today
+python -m brain.detector --as-of 2026-08-31 # replay a past date
+```
+
 ## Run it locally (no accounts needed)
 
 ```bash
@@ -82,7 +109,7 @@ python -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\act
 pip install -r requirements.txt
 cp .env.example .env
 
-python -m pytest                                     # 19 tests
+python -m pytest                                     # 35 tests
 
 # Import the made-up sample reviews into a local SQLite file (data/local.db)
 python -m collectors.csv_import data/sample/sample_reviews.csv
@@ -103,9 +130,12 @@ variables → Actions) for the daily job. Never put keys in code.
    `/` → `%2F`, `:` → `%3A`. Save it as `DATABASE_URL`. Then run `python -m core.db init`.
    Tables get row level security turned on, so Supabase's public REST API can't read them.
 2. **Gemini (AI).** Google AI Studio → Get API key → `GEMINI_API_KEY`. Check it with
-   `python -m core.llm`. Not used by the pipeline until Phase 2.
+   `python -m core.llm`. `GEMINI_MODEL` can list several models, tried in order; Google retires
+   model names and overloads popular ones, so the default has a backup.
 3. **Groq (backup AI).** console.groq.com → API Keys → `GROQ_API_KEY`.
-4. **Reddit.** reddit.com/prefs/apps → "create another app" → type **script**. Copy the id under
+4. **Gmail alerts.** Turn on 2-Step Verification, then Google Account → Security → App passwords.
+   Set `GMAIL_ADDRESS`, `GMAIL_APP_PASSWORD` and optionally `ALERT_TO`.
+5. **Reddit.** reddit.com/prefs/apps → "create another app" → type **script**. Copy the id under
    the app name and the secret into `REDDIT_CLIENT_ID` / `REDDIT_CLIENT_SECRET`, and set
    `REDDIT_USER_AGENT` to something like `brand-consultant/0.1 by u/yourname`.
    Reddit has tightened API access, so new apps may need approval. Until then the job skips Reddit.

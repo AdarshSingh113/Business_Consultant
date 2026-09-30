@@ -64,6 +64,25 @@ CREATE TABLE IF NOT EXISTS aspect_tags (
 
 CREATE INDEX IF NOT EXISTS idx_aspect_tags_issue ON aspect_tags (issue, sentiment);
 
+-- Phase 3: a statistically unusual change the detector found.
+CREATE TABLE IF NOT EXISTS anomalies (
+    id              TEXT PRIMARY KEY,            -- hash of brand + kind + issue + window end
+    brand_id        TEXT NOT NULL REFERENCES brands(id),
+    kind            TEXT NOT NULL,               -- complaint_spike, low_rating_spike
+    issue           TEXT,                        -- for complaint_spike, NULL for ratings
+    window_start    TEXT NOT NULL,
+    window_end      TEXT NOT NULL,
+    recent_hits     INTEGER NOT NULL,            -- e.g. battery complaints in the last 7 days
+    recent_total    INTEGER NOT NULL,            -- reviews in the last 7 days
+    baseline_hits   INTEGER NOT NULL,
+    baseline_total  INTEGER NOT NULL,
+    z_score         REAL NOT NULL,
+    status          TEXT NOT NULL,               -- new, alerted, diagnosing, diagnosed, dismissed
+    created_at      TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_anomalies_status ON anomalies (status, created_at);
+
 -- LLM responses keyed by prompt hash, so the same review is never paid for twice.
 CREATE TABLE IF NOT EXISTS llm_cache (
     key         TEXT PRIMARY KEY,

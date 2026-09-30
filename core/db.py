@@ -59,7 +59,8 @@ def describe(engine: Engine) -> str:
 def init_db(engine: Engine) -> None:
     """Create tables if they do not exist. Safe to run on every job."""
     sql = Path(SCHEMA_FILE).read_text(encoding="utf-8")
-    lines = [line for line in sql.splitlines() if not line.strip().startswith("--")]
+    # Drop "--" comments first so a ";" inside a comment can't split a statement.
+    lines = [line.split("--", 1)[0] for line in sql.splitlines()]
     statements = [s.strip() for s in "\n".join(lines).split(";") if s.strip()]
     with engine.begin() as conn:
         for statement in statements:
