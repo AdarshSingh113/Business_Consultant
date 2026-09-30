@@ -13,5 +13,8 @@ groq>=0.9
 # Collectors
 praw>=7.7
 
+# Dashboard (brings pandas and altair)
+streamlit>=1.40
+
 # Tests
 pytest>=8.0

@@ -4,11 +4,12 @@ An AI consultant for a brand. It watches what people say about the brand and its
 spots problems on its own, asks for data when it needs it, and gives evidence-backed fixes.
 Built only on free tools, as a learning project.
 
-**Status: Phase 5 of 6.** Data comes in from CSV files and Reddit, the LLM tags each review with
+**Status: all 6 phases built.** Data comes in from CSV files and Reddit, the LLM tags each review with
 issues and sentiment, the Perception Radar compares the client with its competitors, a daily
 detector emails you when complaints spike, and a consultant agent investigates each spike,
 asks you for data when reviews aren't enough, reports likely root causes with evidence, and
-recommends prioritized actions. A competitor teardown shows what to copy, defend and launch.
+recommends prioritized actions. A competitor teardown shows what to copy, defend and launch,
+a weekly report lands in your inbox, and a Streamlit dashboard shows it all.
 
 | Phase | Build | Status |
 |---|---|---|
@@ -17,7 +18,7 @@ recommends prioritized actions. A competitor teardown shows what to copy, defend
 | 3 | Anomaly detector, daily alerts by email | Done |
 | 4 | Consultant agent: diagnosis, asks you for data | Done |
 | 5 | Competitor teardown, recommendations | Done |
-| 6 | Dashboard, weekly report | Next |
+| 6 | Dashboard, weekly report | Done |
 
 ## How Phase 1 works
 
@@ -161,6 +162,40 @@ python -m brain.teardown --days 90     # print and save a teardown
 python -m brain.teardown --no-llm      # the math part only
 ```
 
+## How Phase 6 works
+
+**Weekly report** (`jobs/weekly.py`, Mondays 09:13 IST via `.github/workflows/weekly.yml`):
+this week's alerts, finished diagnoses with recommended actions, questions waiting for you,
+a fresh competitor teardown, the Perception Radar, and pipeline health. Saved to the `reports`
+table and emailed.
+
+**Dashboard** (`outputs/dashboard.py`):
+
+| View | What it shows |
+|---|---|
+| Perception Radar | net sentiment per brand, issue-by-brand heatmap (blue good, red bad), strengths and weaknesses |
+| Alerts & diagnoses | every alert, its diagnosis and actions, and the agent's step-by-step reasoning |
+| Questions for you | the agent's data requests, with a form to answer (text or CSV upload) |
+| Competitor teardown | the latest saved teardown |
+| Reviews | browse tagged reviews by brand, issue and sentiment |
+| Pipeline health | recent runs, failures, the latest weekly report |
+
+```bash
+streamlit run outputs/dashboard.py
+DATABASE_URL=sqlite:///data/demo.db streamlit run outputs/dashboard.py   # after python -m demo.run_demo
+```
+
+**Deploy it free** on Streamlit Community Cloud: share.streamlit.io → New app → this repo,
+branch `main`, main file `outputs/dashboard.py`. Under the app's Settings → Secrets add:
+
+```toml
+DATABASE_URL = "postgresql://postgres.xxxx:your%40password@aws-0-....pooler.supabase.com:5432/postgres"
+DASHBOARD_PASSWORD = "pick-a-long-password"
+```
+
+The app is public on the internet and can write answers to your database, so it refuses to
+connect to a cloud database until `DASHBOARD_PASSWORD` is set.
+
 ## Run it locally (no accounts needed)
 
 ```bash
@@ -168,7 +203,8 @@ python -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\act
 pip install -r requirements.txt
 cp .env.example .env
 
-python -m pytest                                     # 46 tests
+python -m pytest                                     # 50 tests
+TEST_DATABASE_URL=postgresql://postgres@localhost:5432/postgres python -m pytest   # same tests on Postgres
 
 # Import the made-up sample reviews into a local SQLite file (data/local.db)
 python -m collectors.csv_import data/sample/sample_reviews.csv
