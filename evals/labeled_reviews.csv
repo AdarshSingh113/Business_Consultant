@@ -1,0 +1,29 @@
+text,relevant,overall,aspects
+"Sound is decent for the price but battery barely lasts 2 hours now, earlier it was 5+.",true,mixed,sound_quality:positive;battery_life:negative
+Left earbud stopped charging after 3 months. Service center asked me to courier it at my own cost.,true,negative,charging:negative;customer_service:negative
+Bass is punchy and the fit is comfortable. Good for gym at this price.,true,positive,bass:positive;comfort_fit:positive;price_value:positive
+Sound accha hai but battery 2 ghante mein khatam ho jaati hai. Disappointed.,true,mixed,sound_quality:positive;battery_life:negative
+Music is fine but people complain my voice is muffled on calls.,true,mixed,sound_quality:positive;mic_quality:negative
+Excellent sound and low latency in games. Connects instantly.,true,positive,sound_quality:positive;latency:positive;connectivity:positive
+The case hinge broke within a month. Build quality feels cheap.,true,negative,build_quality:negative
+Battery lasts all week for me. ANC is okay not great.,true,mixed,battery_life:positive;anc:neutral
+Right bud not charging in the case properly. Have to adjust it every time.,true,negative,charging:negative
+Battery backup is really good. Easily 6 hours on a single charge.,true,positive,battery_life:positive
+Sound is flat and bass is weak compared to boAt. Battery is good though.,true,mixed,sound_quality:negative;bass:negative;battery_life:positive
+Keeps disconnecting from my phone every few minutes.,true,negative,connectivity:negative
+Very light and comfortable for long calls. Mic is clear.,true,positive,comfort_fit:positive;mic_quality:positive
+Best earbuds under 1500. App works well and the ANC is surprisingly good.,true,positive,price_value:positive;app_software:positive;anc:positive
+Product is okay but delivery took 9 days and the box was damaged.,true,negative,delivery:negative;packaging:negative
+Sound quality is clearly a level above. Worth the extra money.,true,positive,sound_quality:positive;price_value:positive
+Great clarity and build. Slightly expensive but lasts long.,true,positive,sound_quality:positive;build_quality:positive;price_value:negative;durability:positive
+ANC works well on the metro. Battery is fine.,true,positive,anc:positive;battery_life:positive
+Sound is great but they keep falling out of my ears while running.,true,mixed,sound_quality:positive;comfort_fit:negative
+One bud died and warranty claim took 5 weeks.,true,negative,durability:negative;warranty_returns:negative
+Stopped working after 2 months. Very disappointed with the durability.,true,negative,durability:negative
+Mic quality has improved a lot compared to my old pair.,true,positive,mic_quality:positive
+"Battery life is much worse than advertised, 2.5 hours max.",true,negative,battery_life:negative
+Which earbuds should I buy under 2000? Confused between boAt and Noise.,false,neutral,
+Took the boat out on the lake this weekend and the engine noise was unbearable.,false,neutral,
+Paisa vasool product. Bass ekdum mast hai.,true,positive,price_value:positive;bass:positive
+"App keeps crashing on my phone, can't change EQ settings at all.",true,negative,app_software:negative
+Customer care never picked up. Replacement took a month.,true,negative,customer_service:negative;warranty_returns:negative

@@ -1,21 +1,7 @@
 import pytest
 
-from core.llm import LLM, LLMError, _Provider, parse_json
-
-
-class Fake(_Provider):
-    def __init__(self, name, replies):
-        super().__init__(model=f"{name}-model", min_interval=0)
-        self.name = name
-        self.replies = list(replies)
-        self.calls = 0
-
-    def call(self, prompt, system):
-        self.calls += 1
-        reply = self.replies.pop(0)
-        if isinstance(reply, Exception):
-            raise reply
-        return reply
+from core.llm import LLM, LLMError, parse_json
+from tests.fakes import FakeProvider as Fake
 
 
 def make(providers, engine=None):

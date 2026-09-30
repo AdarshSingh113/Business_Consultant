@@ -39,6 +39,31 @@ CREATE TABLE IF NOT EXISTS runs (
     errors       TEXT                            -- JSON list of error messages
 );
 
+-- Phase 2: one row per tagged mention, the review-level result.
+CREATE TABLE IF NOT EXISTS mention_tags (
+    mention_id         TEXT PRIMARY KEY REFERENCES mentions(id),
+    status             TEXT NOT NULL,            -- ok, failed
+    relevant           BOOLEAN,                  -- FALSE for off-topic text (questions, ads, other products)
+    overall_sentiment  TEXT,                     -- positive, negative, mixed, neutral
+    attempts           INTEGER NOT NULL DEFAULT 0,
+    error              TEXT,
+    provider           TEXT,
+    model              TEXT,
+    prompt_version     TEXT,                     -- re-tag when the prompt changes
+    tagged_at          TEXT NOT NULL
+);
+
+-- Phase 2: one row per issue a review talks about. "Sound good, battery bad" gives two rows.
+CREATE TABLE IF NOT EXISTS aspect_tags (
+    mention_id  TEXT NOT NULL REFERENCES mentions(id),
+    issue       TEXT NOT NULL,                   -- a label from the issues list in brands.yaml
+    sentiment   TEXT NOT NULL,                   -- positive, negative, neutral
+    quote       TEXT,                            -- words copied from the review, checked to really be there
+    PRIMARY KEY (mention_id, issue)
+);
+
+CREATE INDEX IF NOT EXISTS idx_aspect_tags_issue ON aspect_tags (issue, sentiment);
+
 -- LLM responses keyed by prompt hash, so the same review is never paid for twice.
 CREATE TABLE IF NOT EXISTS llm_cache (
     key         TEXT PRIMARY KEY,

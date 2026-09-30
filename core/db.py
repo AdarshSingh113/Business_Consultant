@@ -64,6 +64,17 @@ def init_db(engine: Engine) -> None:
     with engine.begin() as conn:
         for statement in statements:
             conn.execute(text(statement))
+        if engine.dialect.name == "postgresql":
+            # Supabase exposes tables in the public schema through its REST API.
+            # Row level security with no policies blocks that API, while this
+            # direct connection (the table owner) keeps full access.
+            for table in _table_names(statements):
+                conn.execute(text(f"ALTER TABLE {table} ENABLE ROW LEVEL SECURITY"))
+
+
+def _table_names(statements: list[str]) -> list[str]:
+    prefix = "CREATE TABLE IF NOT EXISTS "
+    return [s[len(prefix) :].split()[0] for s in statements if s.startswith(prefix)]
 
 
 def sync_brands(engine: Engine, config: Config) -> None:
